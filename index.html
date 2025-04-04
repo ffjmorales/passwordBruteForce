@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estimador de Contraseñas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      color: #58a6ff;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      width: 300px;
+      margin-top: 10px;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      background: #161b22;
+      border-radius: 10px;
+      width: 350px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .fast { color: limegreen; }
+    .medium { color: gold; }
+    .slow { color: tomato; }
+  </style>
+</head>
+<body>
+  <h1>¿Cuán segura es tu contraseña?</h1>
+  <input type="text" id="password" placeholder="Escribe una contraseña..." />
+  <div class="result" id="result"></div>
+
+  <script>
+    const passwordInput = document.getElementById("password");
+    const resultDiv = document.getElementById("result");
+
+    passwordInput.addEventListener("input", () => {
+      const password = passwordInput.value;
+      const timeEstimate = estimateTimeToCrack(password);
+      resultDiv.innerHTML = timeEstimate.message;
+      resultDiv.className = `result ${timeEstimate.class}`;
+    });
+
+    function estimateTimeToCrack(password) {
+      if (!password) return { message: "", class: "" };
+
+      const charsets = {
+        lowercase: /[a-z]/.test(password) ? 26 : 0,
+        uppercase: /[A-Z]/.test(password) ? 26 : 0,
+        digits: /[0-9]/.test(password) ? 10 : 0,
+        symbols: /[^a-zA-Z0-9]/.test(password) ? 32 : 0,
+      };
+
+      const charsetSize =
+        charsets.lowercase +
+        charsets.uppercase +
+        charsets.digits +
+        charsets.symbols;
+
+      const combinations = Math.pow(charsetSize, password.length);
+
+      const guessesPerSecond = 1_000_000_000; // estimado con GPU potente
+      const seconds = combinations / guessesPerSecond;
+
+      let message = "";
+      let cssClass = "";
+
+      if (seconds < 1) {
+        message = "⚡ Se puede romper en menos de 1 segundo.";
+        cssClass = "fast";
+      } else if (seconds < 60) {
+        message = `⚡ Se puede romper en ${seconds.toFixed(1)} segundos.`;
+        cssClass = "fast";
+      } else if (seconds < 3600) {
+        message = `⚠️ Se puede romper en ${Math.floor(seconds / 60)} minutos.`;
+        cssClass = "medium";
+      } else if (seconds < 86400) {
+        message = `⏳ Se puede romper en ${Math.floor(seconds / 3600)} horas.`;
+        cssClass = "medium";
+      } else if (seconds < 31536000) {
+        message = `🕒 Se puede romper en ${Math.floor(seconds / 86400)} días.`;
+        cssClass = "slow";
+      } else {
+        const years = Math.floor(seconds / 31536000);
+        message = `🔐 Estimado: ${years} años para romper.`;
+        cssClass = "slow";
+      }
+
+      return { message, class: cssClass };
+    }
+  </script>
+</body>
+</html>
